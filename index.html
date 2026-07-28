@@ -59,6 +59,16 @@ td.step { font-weight: 600; }
 .fbtn .dot.draft { background: #c2c7d0; }
 .fbtn.active .dot.live { background: #4ade80; }
 .fbtn.active .dot.draft { background: #9ca3af; }
+.qpills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.sig { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; display: inline-block; }
+.sig.pos { background: #dcfce7; color: #15803d; }
+.sig.warm { background: #fef3c7; color: #b45309; }
+.sig.cold { background: #fee2e2; color: #b91c1c; }
+.tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; background: #dcfce7; color: #15803d; margin-left: 8px; vertical-align: middle; text-transform: none; letter-spacing: 0; }
+.steptype { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 6px; background: #eef2ff; color: #4f46e5; }
+tr.muted td { color: #b6bcc6; }
+td.center, th.center { text-align: center; }
+.subhead td { padding-top: 20px; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #eef0f3; }
 </style>
 </head>
 <body>
@@ -136,6 +146,94 @@ function star(v, l, cls, d) {
   return '<div class="star ' + (cls || "") + '"><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (d ? '<div class="d">' + d + '</div>' : '') + '</div>';
 }
 
+function toneClass(t) { return t === "positive" ? "pos" : (t === "warm" ? "warm" : "cold"); }
+
+// Funnel bars for a campaign; inserts a "Positive reply" stage when curated.
+function funnelHtml(c) {
+  const cur = c.curated;
+  const positive = (cur && cur.replyQuality) ? cur.replyQuality.rows.filter(function (r) { return r.tone === "positive"; }).length : null;
+  const stages = [
+    { name: "Contacted (invited)", v: c.contacted, color: "#4338ca" },
+    { name: "Invite accepted", v: c.accepted, color: "#7c3aed", prev: c.contacted },
+    { name: "Replied", v: c.replied, color: "#ea580c", prev: c.accepted }
+  ];
+  if (positive != null) stages.push({ name: "Positive reply", v: positive, color: "#d97706", prev: c.replied });
+  stages.push({ name: "Meeting booked", v: c.booked, color: "#16a34a", prev: positive != null ? positive : c.replied });
+
+  const maxV = c.contacted || 1;
+  return '<div class="card"><div class="funnel">' + stages.map(function (s) {
+    const w = Math.max((s.v / maxV) * 100, s.v > 0 ? 6 : 1.5);
+    const conv = s.prev != null ? " · " + fmtPct(s.v, s.prev) + " from prev" : "";
+    return '<div class="frow"><div class="flabel"><div class="fname">' + s.name + '</div><div class="fconv">' +
+      fmtPct(s.v, c.contacted) + " of contacted" + conv + '</div></div><div class="fbarwrap"><div class="fbar" style="width:' +
+      w + '%;background:' + s.color + '">' + s.v + '</div></div></div>';
+  }).join("") + '</div></div>';
+}
+
+// Curated reply-quality table (sentiment). Falls back to live replies list.
+function replyQualityHtml(c) {
+  const cur = c.curated;
+  if (!cur || !cur.replyQuality) {
+    // No curated analysis — show the live repliers list.
+    if (!c.replies || !c.replies.length) return '<div class="section-title">Recent replies</div><div class="card exempty">No replies yet.</div>';
+    const body = c.replies.map(function (r) {
+      const d = r.date ? new Date(r.date).toLocaleDateString() : "";
+      return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
+        '</td><td class="msg">' + (r.preview || "") + '</td><td>' + d + '</td></tr>';
+    }).join("");
+    return '<div class="section-title">Recent replies</div><div class="card"><table><thead><tr><th>Who replied</th><th>What they said</th><th>When</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+  const rq = cur.replyQuality;
+  const pos = rq.rows.filter(function (r) { return r.tone === "positive"; }).length;
+  const warm = rq.rows.filter(function (r) { return r.tone === "warm"; }).length;
+  const cold = rq.rows.filter(function (r) { return r.tone === "cold"; }).length;
+  const pills = '<div class="qpills"><span class="sig pos">' + pos + ' positive</span>' +
+    '<span class="sig warm">' + warm + ' engaged / lukewarm</span>' +
+    '<span class="sig cold">' + cold + ' not a fit</span></div>';
+  const body = rq.rows.map(function (r) {
+    return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
+      '</td><td>' + (r.title || "") + '</td><td class="msg">' + (r.read || "") +
+      '</td><td><span class="sig ' + toneClass(r.tone) + '">' + r.signal + '</span></td></tr>';
+  }).join("");
+  const note = rq.note ? '<div class="note">' + rq.note + '</div>' : "";
+  return '<div class="section-title">Reply quality' + (rq.asOf ? ' <span>' + rq.asOf + '</span>' : '') + '</div>' +
+    '<div class="card">' + pills + '<table><thead><tr><th>Who replied</th><th>Title</th><th>Read</th><th>Signal</th></tr></thead><tbody>' +
+    body + '</tbody></table>' + note + '</div>';
+}
+
+function perStepHtml(c) {
+  const cur = c.curated;
+  if (!cur || !cur.perStep || !cur.perStep.length) return "";
+  const body = cur.perStep.map(function (s) {
+    const muted = s.sent === 0;
+    return '<tr' + (muted ? ' class="muted"' : '') + '><td class="step">' + s.step +
+      '</td><td class="center"><span class="steptype">' + s.type + '</span></td><td>' + s.sent +
+      '</td><td>' + s.replied + '</td><td>' + (s.sent > 0 ? fmtPct(s.replied, s.sent) : "—") + '</td></tr>';
+  }).join("");
+  return '<div class="section-title">Per-step message performance</div>' +
+    '<div class="card"><table><thead><tr><th>Step</th><th class="center">Type</th><th>Sent</th><th>Replied</th><th>Reply %</th></tr></thead><tbody>' +
+    body + '</tbody></table></div>';
+}
+
+function byJobTitleHtml(c) {
+  const cur = c.curated;
+  if (!cur || !cur.byJobTitle) return "";
+  const b = cur.byJobTitle;
+  function row(x) {
+    const tag = x.tag ? ' <span class="tag">' + x.tag + '</span>' : '';
+    return '<tr><td class="step">' + x.name + tag + '</td><td>' + x.contacted +
+      '</td><td>' + x.accepted + ' <span style="color:#9ca3af">(' + fmtPct(x.accepted, x.contacted) + ')</span></td><td>' +
+      x.replied + ' <span style="color:#9ca3af">(' + fmtPct(x.replied, x.contacted) + ')</span></td></tr>';
+  }
+  const roles = (b.roles || []).map(row).join("");
+  const sen = (b.seniority || []).map(row).join("");
+  const senBlock = sen ? '<tr class="subhead"><td>Seniority</td><td></td><td></td><td></td></tr>' + sen : "";
+  const footer = b.footer ? '<div class="note">' + b.footer + '</div>' : "";
+  return '<div class="section-title">Response by job title' + (b.batchNote ? ' <span>' + b.batchNote + '</span>' : '') + '</div>' +
+    '<div class="card"><table><thead><tr><th>Role family</th><th>Contacted</th><th>Accepted</th><th>Replied</th></tr></thead><tbody>' +
+    roles + senBlock + '</tbody></table>' + footer + '</div>';
+}
+
 // Full detail view for a single campaign / experiment.
 function campaignDetail(c) {
   const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
@@ -154,47 +252,25 @@ function campaignDetail(c) {
     star(c.contacted, "Contacted", "", "") +
     '</div>';
 
-  const stages = [
-    { name: "Contacted (invited)", v: c.contacted, color: "#4338ca" },
-    { name: "Invite accepted", v: c.accepted, color: "#7c3aed", prev: c.contacted },
-    { name: "Replied", v: c.replied, color: "#ea580c", prev: c.accepted },
-    { name: "Meeting booked", v: c.booked, color: "#16a34a", prev: c.replied }
-  ];
-  const maxV = c.contacted || 1;
-  const funnel = '<div class="card"><div class="funnel">' + stages.map(function (s) {
-    const w = Math.max((s.v / maxV) * 100, s.v > 0 ? 6 : 1.5);
-    const conv = s.prev != null ? " · " + fmtPct(s.v, s.prev) + " from prev" : "";
-    return '<div class="frow"><div class="flabel"><div class="fname">' + s.name + '</div><div class="fconv">' +
-      fmtPct(s.v, c.contacted) + " of contacted" + conv + '</div></div><div class="fbarwrap"><div class="fbar" style="width:' +
-      w + '%;background:' + s.color + '">' + s.v + '</div></div></div>';
-  }).join("") + '</div></div>';
-
-  let replies = '<div class="card exempty">No replies yet.</div>';
-  if (c.replies && c.replies.length) {
-    replies = '<div class="card"><table><thead><tr><th>Who replied</th><th>What they said</th><th>When</th></tr></thead><tbody>' +
-      c.replies.map(function (r) {
-        const d = r.date ? new Date(r.date).toLocaleDateString() : "";
-        return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
-          '</td><td class="msg">' + (r.preview || "") + '</td><td>' + d + '</td></tr>';
-      }).join("") + '</tbody></table></div>';
-  }
-
-  const sig = c.signal ? '<span>' + c.signal + '</span>' : '';
   return '<div class="section-title">' + kind + ' <span>' + c.name + '</span> ' + badge + '</div>' +
     (c.signal ? '<div class="meta">' + c.signal + '</div>' : '') + stars +
-    '<div class="section-title">Funnel</div>' + funnel +
-    '<div class="section-title">Recent replies</div>' + replies;
+    '<div class="section-title">Funnel</div>' + funnelHtml(c) +
+    replyQualityHtml(c) +
+    perStepHtml(c) +
+    byJobTitleHtml(c);
 }
 
 // Comparison view across every campaign.
 function allView(camps) {
   const rows = camps.map(function (c) {
     const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
-    return '<tr><td class="step"><a href="#" onclick="selectFilter(\'' + c.id + '\');return false;" style="color:#111827;text-decoration:none">' + c.name + '</a> ' + badge + '</td><td>' + c.contacted +
+    const leads = c.leadsLoaded != null ? c.leadsLoaded : "—";
+    return '<tr><td class="step"><a href="#" onclick="selectFilter(\'' + c.id + '\');return false;" style="color:#111827;text-decoration:none">' + c.name + '</a> ' + badge + '</td><td>' + leads +
+      '</td><td>' + c.contacted +
       '</td><td>' + c.accepted + ' <span style="color:#9ca3af">(' + fmtPct(c.accepted, c.contacted) + ')</span></td><td>' + c.replied +
       ' <span style="color:#9ca3af">(' + fmtPct(c.replied, c.accepted) + ')</span></td><td>' + c.booked + '</td></tr>';
   }).join("");
-  const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
+  const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Leads loaded</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
     rows + '</tbody></table></div>';
 
   return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to drill in</span></div>' + overview;

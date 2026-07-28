@@ -21,6 +21,66 @@ const MANUAL_BOOKINGS = {
   "cam_w8MSGFGBJeFHh8qRA": 5
 };
 
+// ---------------------------------------------------------------------------
+// CURATED ANALYSIS — data lemlist's API does NOT provide (reply sentiment,
+// per-step performance, job-title breakdown, leads loaded). Edit freely.
+// Keyed by campaign id. Any campaign without an entry simply hides these
+// sections. Funnel counts and reply lists stay LIVE from lemlist above.
+//   tone: "positive" | "warm" | "cold"  -> drives colors and the funnel's
+//   "Positive reply" stage (= count of tone "positive").
+// ---------------------------------------------------------------------------
+const CURATED = {
+  "cam_w8MSGFGBJeFHh8qRA": {
+    leadsLoaded: 240,
+    replyQuality: {
+      asOf: "2026-07-24",
+      note: "12 replies now, 6 positive. Both demos booked this week are FDEs (Ben Xiao @ Strala, Emile Cohen @ Tribe AI), so the builder persona is converting too, not just Impl leaders. Meanwhile two Implementation Directors (Kathern Brooks, Talal Said) passed.",
+      rows: [
+        { name: "Karim Kallala",     company: "Attention",      title: "Head of FDE",                read: "Happy to find time to learn more.",     signal: "Positive",             tone: "positive" },
+        { name: "Stan Parkford",     company: "Swiftly",        title: "Director of Implementations", read: "Looked at the site, interested.",       signal: "Positive · pilot",     tone: "positive" },
+        { name: "Geoff Genzano",     company: "Courier Health", title: "Director of Implementation",  read: "Got double booked, will reschedule.",   signal: "Positive · rebooking", tone: "positive" },
+        { name: "Meghna Shekhar",    company: "Magical",        title: "AI FDE",                     read: "Setting time next week.",               signal: "Positive · reconnect", tone: "positive" },
+        { name: "Ben Xiao",          company: "Strala",         title: "FDE",                        read: "Meeting set, rescheduled to 10:30.",    signal: "Booked · demo Jul 24", tone: "positive" },
+        { name: "Emile Cohen",       company: "Tribe AI",       title: "FDE",                        read: "Booked a slot, shared his email.",      signal: "Booked · demo Jul 29", tone: "positive" },
+        { name: "Tripp Smith",       company: "Maybern",        title: "SVP Forward Deployed Eng.",  read: "Wants a clear diff vs Linear/Everhour.", signal: "Engaged · skeptical", tone: "warm" },
+        { name: "Christian Yongwhan", company: "Probook",       title: "Chief Architect",            read: "\"Not sure.\"",                         signal: "Lukewarm",             tone: "warm" },
+        { name: "Christie Green",    company: "Tavily",         title: "VP CS",                      read: "Product is API-based, no fit.",         signal: "Not a fit",            tone: "cold" },
+        { name: "Kathern Brooks",    company: "Posh",           title: "Director of Implementation",  read: "\"No, thank you.\"",                    signal: "Not interested",       tone: "cold" },
+        { name: "Talal Said",        company: "Promise",        title: "Solutions & Delivery",       read: "\"No, thank you.\"",                    signal: "Not interested",       tone: "cold" },
+        { name: "Raghav Dixit",      company: "Tenex",          title: "FDE",                        read: "Has an internal tool.",                 signal: "Not a fit",            tone: "cold" }
+      ]
+    },
+    perStep: [
+      { step: "LinkedIn invitation",        type: "Invite",  sent: 237, replied: 1 },
+      { step: "Msg 1 — Intro",              type: "Message", sent: 91,  replied: 8 },
+      { step: "Follow-up 1 — Proof",        type: "Message", sent: 74,  replied: 4 },
+      { step: "Follow-up 2 — Bottleneck Q", type: "Message", sent: 38,  replied: 0 },
+      { step: "InMail — if not accepted",   type: "InMail",  sent: 0,   replied: 0 }
+    ],
+    byJobTitle: {
+      batchNote: "Jul 17 batch, 128 contacted",
+      footer: "From the Jul 17 batch (128 contacted). The campaign has since grown to 237 contacted, so this breakdown is due for a re-enrichment.",
+      roles: [
+        { name: "FDE",              contacted: 51, accepted: 21, replied: 4, tag: "responds" },
+        { name: "Implementation",   contacted: 32, accepted: 15, replied: 2, tag: "responds" },
+        { name: "Solutions / SE",   contacted: 22, accepted: 10, replied: 0 },
+        { name: "Customer Success", contacted: 8,  accepted: 2,  replied: 0 },
+        { name: "Deployment",       contacted: 7,  accepted: 2,  replied: 0 },
+        { name: "Other",            contacted: 5,  accepted: 3,  replied: 0 },
+        { name: "Architect",        contacted: 3,  accepted: 1,  replied: 0 }
+      ],
+      seniority: [
+        { name: "Leaders (Head / Dir / VP / Chief)", contacted: 67, accepted: 31, replied: 4 },
+        { name: "ICs / individual contributors",     contacted: 61, accepted: 23, replied: 2 }
+      ]
+    }
+  },
+  "cam_oCLPvtEyumvDyqECo": { leadsLoaded: 28 },
+  "cam_baQ4bryphKccydJmo": { leadsLoaded: 9 },
+  "cam_NmKvkhsnFu7eiSLYr": { leadsLoaded: 18 },
+  "cam_vrMNEtXmxAG2LX4GG": { leadsLoaded: 59 }
+};
+
 function authHeader() {
   const key = process.env.LEMLIST_API_KEY;
   if (!key) throw new Error("LEMLIST_API_KEY is not set");
@@ -102,6 +162,8 @@ async function computeCampaign(meta) {
   });
   replies.sort(function (x, y) { return (y.date || "").localeCompare(x.date || ""); });
 
+  const curated = CURATED[meta.id] || null;
+
   return {
     id: meta.id, name: meta.name, role: meta.role, signal: meta.signal,
     contacted: contactedSet.size,
@@ -110,7 +172,9 @@ async function computeCampaign(meta) {
     booked: Math.max(bookedApi, manual),
     messagesSent: linkedinSent.length,
     live: contactedSet.size > 0,
-    replies: replies
+    replies: replies,
+    leadsLoaded: curated && curated.leadsLoaded != null ? curated.leadsLoaded : null,
+    curated: curated
   };
 }
 
