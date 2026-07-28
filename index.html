@@ -50,7 +50,7 @@ td.step { font-weight: 600; }
 .exkpi .l { font-size: 11px; color: #6b7280; }
 .exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
 .rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
-.filterbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 22px; }
+.filterbar { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 12px; margin: 22px 0 26px; }
 .fbtn { border: 1px solid transparent; background: #eef0f3; color: #4b5563; font-size: 12.5px; font-weight: 500; padding: 8px 15px; border-radius: 9px; cursor: pointer; white-space: nowrap; transition: background .14s ease, color .14s ease, box-shadow .14s ease; }
 .fbtn:hover { background: #e4e7ec; color: #1f2937; }
 .fbtn.active { background: #111827; color: #fff; box-shadow: 0 1px 2px rgba(17,24,39,.18); }
@@ -188,8 +188,6 @@ function campaignDetail(c) {
 
 // Comparison view across every campaign.
 function allView(camps) {
-  const exps = camps.filter(function (c) { return c.role === "experiment"; });
-
   const rows = camps.map(function (c) {
     const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
     return '<tr><td class="step"><a href="#" onclick="selectFilter(\'' + c.id + '\');return false;" style="color:#111827;text-decoration:none">' + c.name + '</a> ' + badge + '</td><td>' + c.contacted +
@@ -199,23 +197,7 @@ function allView(camps) {
   const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
     rows + '</tbody></table></div>';
 
-  const cards = '<div class="exgrid">' + exps.map(function (c) {
-    const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
-    let body;
-    if (!c.live) {
-      body = '<div class="exempty">Not launched yet.</div>';
-    } else {
-      body = '<div class="exkpis">' +
-        '<div class="exkpi"><div class="v">' + c.contacted + '</div><div class="l">Contacted</div></div>' +
-        '<div class="exkpi"><div class="v">' + c.accepted + '</div><div class="l">Accepted ' + fmtPct(c.accepted, c.contacted) + '</div></div>' +
-        '<div class="exkpi"><div class="v">' + c.replied + '</div><div class="l">Replied ' + fmtPct(c.replied, c.accepted) + '</div></div>' +
-        '</div>';
-    }
-    return '<div class="excard"><a class="rebtn" href="#" onclick="selectFilter(\'' + c.id + '\');return false;">View →</a><div class="exname">' + c.name + ' ' + badge + '</div><div class="exsig">' + c.signal + '</div>' + body + '</div>';
-  }).join("") + '</div>';
-
-  return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to drill in</span></div>' + overview +
-    '<div class="section-title">Experiments</div>' + cards;
+  return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to drill in</span></div>' + overview;
 }
 
 load();
