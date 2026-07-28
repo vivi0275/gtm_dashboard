@@ -50,14 +50,15 @@ td.step { font-weight: 600; }
 .exkpi .l { font-size: 11px; color: #6b7280; }
 .exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
 .rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
-.filterbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }
-.fbtn { border: 1px solid #d7dae0; background: #fff; color: #374151; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: all .12s ease; }
-.fbtn:hover { border-color: #a5abb6; }
-.fbtn.active { background: #111827; border-color: #111827; color: #fff; }
-.fbtn .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-.fbtn .dot.live { background: #16a34a; }
-.fbtn .dot.draft { background: #cbd0d8; }
-.fbtn.active .dot.draft { background: #6b7280; }
+.filterbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 22px; }
+.fbtn { border: 1px solid transparent; background: #eef0f3; color: #4b5563; font-size: 12.5px; font-weight: 500; padding: 8px 15px; border-radius: 9px; cursor: pointer; white-space: nowrap; transition: background .14s ease, color .14s ease, box-shadow .14s ease; }
+.fbtn:hover { background: #e4e7ec; color: #1f2937; }
+.fbtn.active { background: #111827; color: #fff; box-shadow: 0 1px 2px rgba(17,24,39,.18); }
+.fbtn .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 7px; vertical-align: middle; opacity: .9; }
+.fbtn .dot.live { background: #22c55e; }
+.fbtn .dot.draft { background: #c2c7d0; }
+.fbtn.active .dot.live { background: #4ade80; }
+.fbtn.active .dot.draft { background: #9ca3af; }
 </style>
 </head>
 <body>

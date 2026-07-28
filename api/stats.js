@@ -9,10 +9,10 @@ const LEMLIST_BASE = "https://api.lemlist.com/api";
 // The campaigns shown on the dashboard. Edit names/ids/signals here.
 const CAMPAIGNS = [
   { id: "cam_w8MSGFGBJeFHh8qRA", name: "Campaign GTM", role: "main", signal: "Live campaign" },
-  { id: "cam_oCLPvtEyumvDyqECo", name: "Stack signal: Rocketlane / Asana", role: "experiment", signal: "Signal: tech stack (TheirStack)" },
-  { id: "cam_baQ4bryphKccydJmo", name: "Structuring: first implementation hire", role: "experiment", signal: "Signal: first impl job post" },
-  { id: "cam_NmKvkhsnFu7eiSLYr", name: "Scaling: growing the impl team", role: "experiment", signal: "Signal: growth impl job post" },
-  { id: "cam_vrMNEtXmxAG2LX4GG", name: "Clay: implementation-heavy Series A/B", role: "experiment", signal: "Signal: Clay stacked signals" }
+  { id: "cam_oCLPvtEyumvDyqECo", name: "Teams running Rocketlane / Asana", role: "experiment", signal: "Signal: tech stack (TheirStack)" },
+  { id: "cam_baQ4bryphKccydJmo", name: "Teams making their first implementation hire", role: "experiment", signal: "Signal: first impl job post" },
+  { id: "cam_NmKvkhsnFu7eiSLYr", name: "Teams growing their implementation team", role: "experiment", signal: "Signal: growth impl job post" },
+  { id: "cam_vrMNEtXmxAG2LX4GG", name: "Teams in implementation-heavy verticals", role: "experiment", signal: "Signal: Clay stacked signals" }
 ];
 
 // Demos booked outside lemlist (Calendly/Zapier). lemlist's meetingBooked only
