@@ -50,13 +50,13 @@ td.step { font-weight: 600; }
 .exkpi .l { font-size: 11px; color: #6b7280; }
 .exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
 .rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
-.filterbar { display: flex; flex-wrap: wrap; column-gap: 28px; row-gap: 16px; margin: 22px 0 28px; }
-.fbtn { border: 1px solid transparent; background: #eef0f3; color: #4b5563; font-size: 12.5px; font-weight: 500; padding: 8px 15px; border-radius: 9px; cursor: pointer; white-space: nowrap; transition: background .14s ease, color .14s ease, box-shadow .14s ease; }
-.fbtn:hover { background: #e4e7ec; color: #1f2937; }
-.fbtn.active { background: #111827; color: #fff; box-shadow: 0 1px 2px rgba(17,24,39,.18); }
-.fbtn .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 7px; vertical-align: middle; opacity: .9; }
+.filterbar { display: flex; flex-wrap: wrap; gap: 14px; margin: 22px 0 32px; }
+.fbtn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e4e7ec; background: #fff; color: #6b7280; font-size: 13px; font-weight: 500; padding: 9px 18px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: border-color .14s ease, color .14s ease, background .14s ease; }
+.fbtn:hover { border-color: #c7ccd4; color: #374151; }
+.fbtn.active { background: #111827; border-color: #111827; color: #fff; font-weight: 600; }
+.fbtn .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
 .fbtn .dot.live { background: #22c55e; }
-.fbtn .dot.draft { background: #c2c7d0; }
+.fbtn .dot.draft { background: #cbd0d8; }
 .fbtn.active .dot.live { background: #4ade80; }
 .fbtn.active .dot.draft { background: #9ca3af; }
 .qpills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -260,24 +260,56 @@ function campaignDetail(c) {
     byJobTitleHtml(c);
 }
 
-// Comparison view across every campaign.
+// Aggregated view: every campaign's stats combined into one funnel,
+// one reply-quality table, and one response-by-job-title breakdown.
 function allView(camps) {
-  const rows = camps.map(function (c) {
-    const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
-    const leads = c.leadsLoaded != null ? c.leadsLoaded : "—";
-    return '<tr><td class="step"><a href="#" onclick="selectFilter(\'' + c.id + '\');return false;" style="color:#111827;text-decoration:none">' + c.name + '</a> ' + badge + '</td><td>' + leads +
-      '</td><td>' + c.contacted +
-      '</td><td>' + c.accepted + ' <span style="color:#9ca3af">(' + fmtPct(c.accepted, c.contacted) + ')</span></td><td>' + c.replied +
-      ' <span style="color:#9ca3af">(' + fmtPct(c.replied, c.accepted) + ')</span></td><td>' + c.booked + '</td></tr>';
-  }).join("");
-  const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Leads loaded</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
-    rows + '</tbody></table></div>';
+  const agg = { name: "All campaigns", contacted: 0, accepted: 0, replied: 0, booked: 0 };
+  camps.forEach(function (c) {
+    agg.contacted += c.contacted; agg.accepted += c.accepted;
+    agg.replied += c.replied; agg.booked += c.booked;
+  });
 
-  // Full detail for every campaign, stacked — same layout as the single view.
-  const details = camps.map(function (c) { return campaignDetail(c); }).join('<hr class="hr">');
+  // Combine every campaign's curated reply-quality rows.
+  const rqRows = [];
+  camps.forEach(function (c) {
+    if (c.curated && c.curated.replyQuality && c.curated.replyQuality.rows) {
+      rqRows.push.apply(rqRows, c.curated.replyQuality.rows);
+    }
+  });
 
-  return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to jump to its detail</span></div>' + overview +
-    '<hr class="hr">' + details;
+  // Merge response-by-job-title across campaigns, summing by row name.
+  function mergeRows(getter) {
+    const map = {}, order = [];
+    camps.forEach(function (c) {
+      const arr = (c.curated && c.curated.byJobTitle) ? (getter(c.curated.byJobTitle) || []) : [];
+      arr.forEach(function (x) {
+        if (!map[x.name]) { map[x.name] = { name: x.name, contacted: 0, accepted: 0, replied: 0, tag: x.tag }; order.push(x.name); }
+        map[x.name].contacted += x.contacted; map[x.name].accepted += x.accepted; map[x.name].replied += x.replied;
+        if (x.tag) map[x.name].tag = x.tag;
+      });
+    });
+    return order.map(function (n) { return map[n]; });
+  }
+  const roles = mergeRows(function (b) { return b.roles; });
+  const seniority = mergeRows(function (b) { return b.seniority; });
+
+  // Synthetic campaign object so the section renderers can be reused.
+  agg.curated = {
+    replyQuality: rqRows.length ? { rows: rqRows } : null,
+    byJobTitle: (roles.length || seniority.length) ? { roles: roles, seniority: seniority, batchNote: "all campaigns combined" } : null
+  };
+
+  const stars = '<div class="stars">' +
+    star(agg.booked, "Meetings booked", "hero", "") +
+    star(agg.accepted, "Invites accepted", "", fmtPct(agg.accepted, agg.contacted) + " accept rate") +
+    star(agg.replied, "Replies", "", fmtPct(agg.replied, agg.accepted) + " of accepted") +
+    star(agg.contacted, "Contacted", "", "") +
+    '</div>';
+
+  return '<div class="section-title">All campaigns <span>combined across every campaign</span></div>' + stars +
+    '<div class="section-title">Funnel <span>all campaigns combined</span></div>' + funnelHtml(agg) +
+    replyQualityHtml(agg) +
+    byJobTitleHtml(agg);
 }
 
 load();
