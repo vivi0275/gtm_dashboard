@@ -273,7 +273,11 @@ function allView(camps) {
   const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Leads loaded</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
     rows + '</tbody></table></div>';
 
-  return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to drill in</span></div>' + overview;
+  // Full detail for every campaign, stacked — same layout as the single view.
+  const details = camps.map(function (c) { return campaignDetail(c); }).join('<hr class="hr">');
+
+  return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to jump to its detail</span></div>' + overview +
+    '<hr class="hr">' + details;
 }
 
 load();
