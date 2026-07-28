@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tandem — Outbound Dashboard</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f7f8fa; color: #1a1d24; font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 70px; }
+h1 { font-size: 20px; margin: 0 0 2px; }
+.sub { color: #6b7280; font-size: 13px; }
+.meta { color: #9ca3af; font-size: 12px; margin: 4px 0 18px; }
+.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; margin: 30px 0 12px; }
+.section-title span { text-transform: none; letter-spacing: 0; font-weight: 500; color: #b6bcc6; margin-left: 8px; }
+.hr { height: 1px; background: #e6e8ec; border: 0; margin: 34px 0 0; }
+.card { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 18px; }
+.stars { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.star { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 16px; }
+.star.hero { background: linear-gradient(135deg,#111827,#1f2937); border: none; color: #fff; }
+.star .v { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+.star .l { font-size: 12px; margin-top: 2px; opacity: .85; }
+.star .d { font-size: 12px; margin-top: 5px; font-weight: 600; color: #6b7280; }
+.funnel { display: flex; flex-direction: column; gap: 8px; }
+.frow { display: grid; grid-template-columns: 175px 1fr; gap: 14px; align-items: center; }
+.flabel .fname { font-weight: 600; font-size: 13px; }
+.flabel .fconv { color: #9ca3af; font-size: 11px; }
+.fbarwrap { background: #eef0f3; border-radius: 8px; height: 32px; overflow: hidden; }
+.fbar { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; }
+th { color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+td.step { font-weight: 600; }
+.msg { color: #6b7280; font-size: 12px; font-style: italic; max-width: 380px; }
+.pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.pill.live { background: #dcfce7; color: #15803d; }
+.pill.draft { background: #f3f4f6; color: #6b7280; }
+.note { font-size: 12px; color: #9ca3af; margin-top: 10px; }
+.err { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 14px; border-radius: 10px; }
+.loading { color: #9ca3af; padding: 40px; text-align: center; }
+.exgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 12px; }
+.excard { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 16px; }
+.excard .exname { font-weight: 700; font-size: 14px; }
+.excard .exsig { color: #6b7280; font-size: 12px; margin: 2px 0 12px; }
+.exkpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.exkpi { background: #f7f8fa; border-radius: 8px; padding: 8px 10px; }
+.exkpi .v { font-size: 18px; font-weight: 700; }
+.exkpi .l { font-size: 11px; color: #6b7280; }
+.exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
+.rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="rebtn" href="#" onclick="location.reload();return false;">↻ Refresh</a>
+  <h1>🏹 Tandem — Outbound Dashboard</h1>
+  <div class="sub">LinkedIn outbound · Campaign GTM + this quarter's experiments · live from lemlist</div>
+  <div class="meta" id="meta">Loading…</div>
+  <div id="root"><div class="loading">Fetching campaign data…</div></div>
+</div>
+<script>
+function pct(n, d) { return d > 0 ? Math.round(n / d * 1000) / 10 : 0; }
+function fmtPct(n, d) { return d > 0 ? pct(n, d).toFixed(1) + "%" : "—"; }
+
+async function load() {
+  let data;
+  try {
+    const r = await fetch("/api/stats");
+    data = await r.json();
+    if (data.error) throw new Error(data.error);
+  } catch (e) {
+    document.getElementById("root").innerHTML = '<div class="err">Could not load data: ' + (e.message || e) + '</div>';
+    document.getElementById("meta").textContent = "";
+    return;
+  }
+  render(data);
+}
+
+function star(v, l, cls, d) {
+  return '<div class="star ' + (cls || "") + '"><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (d ? '<div class="d">' + d + '</div>' : '') + '</div>';
+}
+
+function render(data) {
+  const camps = data.campaigns || [];
+  const gtm = camps.find(function (c) { return c.role === "main"; }) || camps[0];
+  const exps = camps.filter(function (c) { return c.role === "experiment"; });
+
+  const when = data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "";
+  document.getElementById("meta").textContent = "Live from lemlist · last refreshed " + when + " · cached ~15 min";
+
+  // North star (main campaign)
+  const stars = '<div class="stars">' +
+    star(gtm.booked, "Meetings booked", "hero", "") +
+    star(gtm.accepted, "Invites accepted", "", fmtPct(gtm.accepted, gtm.contacted) + " accept rate") +
+    star(gtm.replied, "Replies", "", fmtPct(gtm.replied, gtm.accepted) + " of accepted") +
+    star(gtm.contacted, "Contacted", "", "") +
+    '</div>';
+
+  // Funnel (main)
+  const stages = [
+    { name: "Contacted (invited)", v: gtm.contacted, color: "#4338ca" },
+    { name: "Invite accepted", v: gtm.accepted, color: "#7c3aed", prev: gtm.contacted },
+    { name: "Replied", v: gtm.replied, color: "#ea580c", prev: gtm.accepted },
+    { name: "Meeting booked", v: gtm.booked, color: "#16a34a", prev: gtm.replied }
+  ];
+  const maxV = gtm.contacted || 1;
+  const funnel = '<div class="card"><div class="funnel">' + stages.map(function (s) {
+    const w = Math.max((s.v / maxV) * 100, s.v > 0 ? 6 : 1.5);
+    const conv = s.prev != null ? " · " + fmtPct(s.v, s.prev) + " from prev" : "";
+    return '<div class="frow"><div class="flabel"><div class="fname">' + s.name + '</div><div class="fconv">' +
+      fmtPct(s.v, gtm.contacted) + " of contacted" + conv + '</div></div><div class="fbarwrap"><div class="fbar" style="width:' +
+      w + '%;background:' + s.color + '">' + s.v + '</div></div></div>';
+  }).join("") + '</div></div>';
+
+  // Recent replies (main)
+  let replies = '<div class="card exempty">No replies yet.</div>';
+  if (gtm.replies && gtm.replies.length) {
+    replies = '<div class="card"><table><thead><tr><th>Who replied</th><th>What they said</th><th>When</th></tr></thead><tbody>' +
+      gtm.replies.map(function (r) {
+        const d = r.date ? new Date(r.date).toLocaleDateString() : "";
+        return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
+          '</td><td class="msg">' + (r.preview || "") + '</td><td>' + d + '</td></tr>';
+      }).join("") + '</tbody></table></div>';
+  }
+
+  // Portfolio overview (all)
+  const rows = camps.map(function (c) {
+    const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
+    return '<tr><td class="step">' + c.name + ' ' + badge + '</td><td>' + c.contacted +
+      '</td><td>' + c.accepted + ' <span style="color:#9ca3af">(' + fmtPct(c.accepted, c.contacted) + ')</span></td><td>' + c.replied +
+      ' <span style="color:#9ca3af">(' + fmtPct(c.replied, c.accepted) + ')</span></td><td>' + c.booked + '</td></tr>';
+  }).join("");
+  const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
+    rows + '</tbody></table></div>';
+
+  // Experiment cards
+  const cards = '<div class="exgrid">' + exps.map(function (c) {
+    const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
+    let body;
+    if (!c.live) {
+      body = '<div class="exempty">Not launched yet.</div>';
+    } else {
+      body = '<div class="exkpis">' +
+        '<div class="exkpi"><div class="v">' + c.contacted + '</div><div class="l">Contacted</div></div>' +
+        '<div class="exkpi"><div class="v">' + c.accepted + '</div><div class="l">Accepted ' + fmtPct(c.accepted, c.contacted) + '</div></div>' +
+        '<div class="exkpi"><div class="v">' + c.replied + '</div><div class="l">Replied ' + fmtPct(c.replied, c.accepted) + '</div></div>' +
+        '</div>';
+    }
+    return '<div class="excard"><div class="exname">' + c.name + ' ' + badge + '</div><div class="exsig">' + c.signal + '</div>' + body + '</div>';
+  }).join("") + '</div>';
+
+  document.getElementById("root").innerHTML =
+    '<div class="section-title">North star <span>Campaign GTM</span></div>' + stars +
+    '<div class="section-title">Funnel</div>' + funnel +
+    '<div class="section-title">Recent replies</div>' + replies +
+    '<hr class="hr">' +
+    '<div class="section-title">Portfolio overview <span>all campaigns</span></div>' + overview +
+    '<div class="section-title">Experiments</div>' + cards;
+}
+load();
+</script>
+</body>
+</html>
