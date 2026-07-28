@@ -1,0 +1,14 @@
+# Secrets / environment variables — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Vercel
+.vercel
+
+# OS / editor junk
+.DS_Store
+*.log
