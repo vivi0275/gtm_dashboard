@@ -85,23 +85,22 @@ async function computeCampaign(meta) {
   const bookedApi = uniqueLeads(booked);
   const manual = MANUAL_BOOKINGS[meta.id] || 0;
 
-  // Only the main campaign returns the reply list (keeps the payload small).
-  let replies = [];
-  if (meta.role === "main") {
-    const seen = new Set();
-    replied.forEach(function (a) {
-      if (seen.has(a.leadId)) return;
-      seen.add(a.leadId);
-      const name = [a.leadFirstName, a.leadLastName].filter(Boolean).join(" ") || "Unknown";
-      replies.push({
-        name: name,
-        company: a.leadCompanyName || "",
-        preview: (a.text || "").slice(0, 120),
-        date: a.createdAt || ""
-      });
+  // Reply list per campaign, deduped by lead, so the dashboard can show
+  // the repliers for whichever campaign/experiment is filtered.
+  const replies = [];
+  const seen = new Set();
+  replied.forEach(function (a) {
+    if (seen.has(a.leadId)) return;
+    seen.add(a.leadId);
+    const name = [a.leadFirstName, a.leadLastName].filter(Boolean).join(" ") || "Unknown";
+    replies.push({
+      name: name,
+      company: a.leadCompanyName || "",
+      preview: (a.text || "").slice(0, 120),
+      date: a.createdAt || ""
     });
-    replies.sort(function (x, y) { return (y.date || "").localeCompare(x.date || ""); });
-  }
+  });
+  replies.sort(function (x, y) { return (y.date || "").localeCompare(x.date || ""); });
 
   return {
     id: meta.id, name: meta.name, role: meta.role, signal: meta.signal,

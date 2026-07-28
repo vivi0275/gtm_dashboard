@@ -50,6 +50,14 @@ td.step { font-weight: 600; }
 .exkpi .l { font-size: 11px; color: #6b7280; }
 .exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
 .rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
+.filterbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }
+.fbtn { border: 1px solid #d7dae0; background: #fff; color: #374151; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: all .12s ease; }
+.fbtn:hover { border-color: #a5abb6; }
+.fbtn.active { background: #111827; border-color: #111827; color: #fff; }
+.fbtn .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.fbtn .dot.live { background: #16a34a; }
+.fbtn .dot.draft { background: #cbd0d8; }
+.fbtn.active .dot.draft { background: #6b7280; }
 </style>
 </head>
 <body>
@@ -58,11 +66,15 @@ td.step { font-weight: 600; }
   <h1>🏹 Tandem — Outbound Dashboard</h1>
   <div class="sub">LinkedIn outbound · Campaign GTM + this quarter's experiments · live from lemlist</div>
   <div class="meta" id="meta">Loading…</div>
+  <div id="filterbar"></div>
   <div id="root"><div class="loading">Fetching campaign data…</div></div>
 </div>
 <script>
 function pct(n, d) { return d > 0 ? Math.round(n / d * 1000) / 10 : 0; }
 function fmtPct(n, d) { return d > 0 ? pct(n, d).toFixed(1) + "%" : "—"; }
+
+var DATA = null;       // the full payload from /api/stats
+var SELECTED = "all";  // "all" or a campaign id
 
 async function load() {
   let data;
@@ -75,67 +87,117 @@ async function load() {
     document.getElementById("meta").textContent = "";
     return;
   }
-  render(data);
+  DATA = data;
+  const camps = data.campaigns || [];
+  const main = camps.find(function (c) { return c.role === "main"; });
+  SELECTED = main ? main.id : "all";  // land on the main campaign by default
+
+  const when = data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "";
+  document.getElementById("meta").textContent = "Live from lemlist · last refreshed " + when + " · cached ~15 min";
+
+  renderFilterBar();
+  renderContent();
+}
+
+// --- Filter bar --------------------------------------------------------------
+function renderFilterBar() {
+  const camps = (DATA && DATA.campaigns) || [];
+  let html = '<button class="fbtn' + (SELECTED === "all" ? " active" : "") +
+    '" onclick="selectFilter(\'all\')">All campaigns</button>';
+  html += camps.map(function (c) {
+    const dot = '<span class="dot ' + (c.live ? "live" : "draft") + '"></span>';
+    return '<button class="fbtn' + (SELECTED === c.id ? " active" : "") +
+      '" onclick="selectFilter(\'' + c.id + '\')">' + dot + c.name + '</button>';
+  }).join("");
+  document.getElementById("filterbar").innerHTML = html;
+}
+
+function selectFilter(id) {
+  SELECTED = id;
+  renderFilterBar();
+  renderContent();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+window.selectFilter = selectFilter;
+
+// --- Content rendering -------------------------------------------------------
+function renderContent() {
+  const camps = (DATA && DATA.campaigns) || [];
+  if (SELECTED === "all") {
+    document.getElementById("root").innerHTML = allView(camps);
+  } else {
+    const c = camps.find(function (x) { return x.id === SELECTED; });
+    document.getElementById("root").innerHTML = c ? campaignDetail(c) : '<div class="err">Campaign not found.</div>';
+  }
 }
 
 function star(v, l, cls, d) {
   return '<div class="star ' + (cls || "") + '"><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (d ? '<div class="d">' + d + '</div>' : '') + '</div>';
 }
 
-function render(data) {
-  const camps = data.campaigns || [];
-  const gtm = camps.find(function (c) { return c.role === "main"; }) || camps[0];
-  const exps = camps.filter(function (c) { return c.role === "experiment"; });
+// Full detail view for a single campaign / experiment.
+function campaignDetail(c) {
+  const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
+  const kind = c.role === "main" ? "Main campaign" : "Experiment";
 
-  const when = data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "";
-  document.getElementById("meta").textContent = "Live from lemlist · last refreshed " + when + " · cached ~15 min";
+  if (!c.live) {
+    return '<div class="section-title">' + kind + ' <span>' + c.name + '</span></div>' +
+      '<div class="card exempty">Not launched yet — no data for “' + c.name + '”.' +
+      (c.signal ? ' <br><span style="color:#b6bcc6">' + c.signal + '</span>' : '') + '</div>';
+  }
 
-  // North star (main campaign)
   const stars = '<div class="stars">' +
-    star(gtm.booked, "Meetings booked", "hero", "") +
-    star(gtm.accepted, "Invites accepted", "", fmtPct(gtm.accepted, gtm.contacted) + " accept rate") +
-    star(gtm.replied, "Replies", "", fmtPct(gtm.replied, gtm.accepted) + " of accepted") +
-    star(gtm.contacted, "Contacted", "", "") +
+    star(c.booked, "Meetings booked", "hero", "") +
+    star(c.accepted, "Invites accepted", "", fmtPct(c.accepted, c.contacted) + " accept rate") +
+    star(c.replied, "Replies", "", fmtPct(c.replied, c.accepted) + " of accepted") +
+    star(c.contacted, "Contacted", "", "") +
     '</div>';
 
-  // Funnel (main)
   const stages = [
-    { name: "Contacted (invited)", v: gtm.contacted, color: "#4338ca" },
-    { name: "Invite accepted", v: gtm.accepted, color: "#7c3aed", prev: gtm.contacted },
-    { name: "Replied", v: gtm.replied, color: "#ea580c", prev: gtm.accepted },
-    { name: "Meeting booked", v: gtm.booked, color: "#16a34a", prev: gtm.replied }
+    { name: "Contacted (invited)", v: c.contacted, color: "#4338ca" },
+    { name: "Invite accepted", v: c.accepted, color: "#7c3aed", prev: c.contacted },
+    { name: "Replied", v: c.replied, color: "#ea580c", prev: c.accepted },
+    { name: "Meeting booked", v: c.booked, color: "#16a34a", prev: c.replied }
   ];
-  const maxV = gtm.contacted || 1;
+  const maxV = c.contacted || 1;
   const funnel = '<div class="card"><div class="funnel">' + stages.map(function (s) {
     const w = Math.max((s.v / maxV) * 100, s.v > 0 ? 6 : 1.5);
     const conv = s.prev != null ? " · " + fmtPct(s.v, s.prev) + " from prev" : "";
     return '<div class="frow"><div class="flabel"><div class="fname">' + s.name + '</div><div class="fconv">' +
-      fmtPct(s.v, gtm.contacted) + " of contacted" + conv + '</div></div><div class="fbarwrap"><div class="fbar" style="width:' +
+      fmtPct(s.v, c.contacted) + " of contacted" + conv + '</div></div><div class="fbarwrap"><div class="fbar" style="width:' +
       w + '%;background:' + s.color + '">' + s.v + '</div></div></div>';
   }).join("") + '</div></div>';
 
-  // Recent replies (main)
   let replies = '<div class="card exempty">No replies yet.</div>';
-  if (gtm.replies && gtm.replies.length) {
+  if (c.replies && c.replies.length) {
     replies = '<div class="card"><table><thead><tr><th>Who replied</th><th>What they said</th><th>When</th></tr></thead><tbody>' +
-      gtm.replies.map(function (r) {
+      c.replies.map(function (r) {
         const d = r.date ? new Date(r.date).toLocaleDateString() : "";
         return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
           '</td><td class="msg">' + (r.preview || "") + '</td><td>' + d + '</td></tr>';
       }).join("") + '</tbody></table></div>';
   }
 
-  // Portfolio overview (all)
+  const sig = c.signal ? '<span>' + c.signal + '</span>' : '';
+  return '<div class="section-title">' + kind + ' <span>' + c.name + '</span> ' + badge + '</div>' +
+    (c.signal ? '<div class="meta">' + c.signal + '</div>' : '') + stars +
+    '<div class="section-title">Funnel</div>' + funnel +
+    '<div class="section-title">Recent replies</div>' + replies;
+}
+
+// Comparison view across every campaign.
+function allView(camps) {
+  const exps = camps.filter(function (c) { return c.role === "experiment"; });
+
   const rows = camps.map(function (c) {
     const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
-    return '<tr><td class="step">' + c.name + ' ' + badge + '</td><td>' + c.contacted +
+    return '<tr><td class="step"><a href="#" onclick="selectFilter(\'' + c.id + '\');return false;" style="color:#111827;text-decoration:none">' + c.name + '</a> ' + badge + '</td><td>' + c.contacted +
       '</td><td>' + c.accepted + ' <span style="color:#9ca3af">(' + fmtPct(c.accepted, c.contacted) + ')</span></td><td>' + c.replied +
       ' <span style="color:#9ca3af">(' + fmtPct(c.replied, c.accepted) + ')</span></td><td>' + c.booked + '</td></tr>';
   }).join("");
   const overview = '<div class="card"><table><thead><tr><th>Campaign</th><th>Contacted</th><th>Accepted</th><th>Replied</th><th>Booked</th></tr></thead><tbody>' +
     rows + '</tbody></table></div>';
 
-  // Experiment cards
   const cards = '<div class="exgrid">' + exps.map(function (c) {
     const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
     let body;
@@ -148,17 +210,13 @@ function render(data) {
         '<div class="exkpi"><div class="v">' + c.replied + '</div><div class="l">Replied ' + fmtPct(c.replied, c.accepted) + '</div></div>' +
         '</div>';
     }
-    return '<div class="excard"><div class="exname">' + c.name + ' ' + badge + '</div><div class="exsig">' + c.signal + '</div>' + body + '</div>';
+    return '<div class="excard"><a class="rebtn" href="#" onclick="selectFilter(\'' + c.id + '\');return false;">View →</a><div class="exname">' + c.name + ' ' + badge + '</div><div class="exsig">' + c.signal + '</div>' + body + '</div>';
   }).join("") + '</div>';
 
-  document.getElementById("root").innerHTML =
-    '<div class="section-title">North star <span>Campaign GTM</span></div>' + stars +
-    '<div class="section-title">Funnel</div>' + funnel +
-    '<div class="section-title">Recent replies</div>' + replies +
-    '<hr class="hr">' +
-    '<div class="section-title">Portfolio overview <span>all campaigns</span></div>' + overview +
+  return '<div class="section-title">Portfolio overview <span>all campaigns · click a name to drill in</span></div>' + overview +
     '<div class="section-title">Experiments</div>' + cards;
 }
+
 load();
 </script>
 </body>
