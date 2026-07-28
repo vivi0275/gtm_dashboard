@@ -27,6 +27,28 @@ function authHeader() {
   return "Basic " + Buffer.from(":" + key).toString("base64");
 }
 
+function sleep(ms) {
+  return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
+
+// GET a lemlist URL, retrying on 429 (rate limit) with exponential backoff.
+// Honors the Retry-After header when lemlist sends one.
+async function getWithRetry(url, label) {
+  const maxAttempts = 6;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const r = await fetch(url, { headers: { Authorization: authHeader() } });
+    if (r.status === 429) {
+      if (attempt === maxAttempts) throw new Error("lemlist 429 on " + label + " (rate limited after retries)");
+      const retryAfter = parseInt(r.headers.get("retry-after"), 10);
+      const waitMs = (retryAfter > 0 ? retryAfter * 1000 : Math.min(1000 * Math.pow(2, attempt), 8000));
+      await sleep(waitMs);
+      continue;
+    }
+    if (!r.ok) throw new Error("lemlist " + r.status + " on " + label);
+    return r.json();
+  }
+}
+
 // Fetch every activity of a given type for a campaign (paginated).
 async function fetchActivities(campaignId, type) {
   const out = [];
@@ -34,12 +56,11 @@ async function fetchActivities(campaignId, type) {
   for (let offset = 0, page = 0; page < 40; offset += limit, page++) {
     const url = LEMLIST_BASE + "/activities?campaignId=" + campaignId +
       "&type=" + type + "&limit=" + limit + "&offset=" + offset;
-    const r = await fetch(url, { headers: { Authorization: authHeader() } });
-    if (!r.ok) throw new Error("lemlist " + r.status + " on " + type);
-    const batch = await r.json();
+    const batch = await getWithRetry(url, type);
     if (!Array.isArray(batch) || batch.length === 0) break;
     out.push.apply(out, batch);
     if (batch.length < limit) break;
+    await sleep(120); // gentle pacing between pages to stay under the rate limit
   }
   return out;
 }
@@ -51,13 +72,12 @@ function uniqueLeads(acts) {
 }
 
 async function computeCampaign(meta) {
-  const [inviteDone, linkedinSent, accepted, replied, booked] = await Promise.all([
-    fetchActivities(meta.id, "linkedinInviteDone"),
-    fetchActivities(meta.id, "linkedinSent"),
-    fetchActivities(meta.id, "linkedinInviteAccepted"),
-    fetchActivities(meta.id, "linkedinReplied"),
-    fetchActivities(meta.id, "meetingBooked")
-  ]);
+  // Sequential (not Promise.all) to avoid bursting lemlist's rate limit.
+  const inviteDone = await fetchActivities(meta.id, "linkedinInviteDone");
+  const linkedinSent = await fetchActivities(meta.id, "linkedinSent");
+  const accepted = await fetchActivities(meta.id, "linkedinInviteAccepted");
+  const replied = await fetchActivities(meta.id, "linkedinReplied");
+  const booked = await fetchActivities(meta.id, "meetingBooked");
 
   const contactedSet = new Set();
   inviteDone.concat(linkedinSent).forEach(function (a) { if (a.leadId) contactedSet.add(a.leadId); });
