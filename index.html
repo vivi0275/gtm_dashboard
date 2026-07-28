@@ -50,15 +50,10 @@ td.step { font-weight: 600; }
 .exkpi .l { font-size: 11px; color: #6b7280; }
 .exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
 .rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
-.filterbar { display: flex; flex-wrap: wrap; gap: 24px; margin: 22px 0 32px; }
-.fbtn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e4e7ec; background: #fff; color: #6b7280; font-size: 13px; font-weight: 500; padding: 9px 18px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: border-color .14s ease, color .14s ease, background .14s ease; }
-.fbtn:hover { border-color: #c7ccd4; color: #374151; }
-.fbtn.active { background: #111827; border-color: #111827; color: #fff; font-weight: 600; }
-.fbtn .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-.fbtn .dot.live { background: #22c55e; }
-.fbtn .dot.draft { background: #cbd0d8; }
-.fbtn.active .dot.live { background: #4ade80; }
-.fbtn.active .dot.draft { background: #9ca3af; }
+.filterbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 32px; }
+.fbtn { border: 0; background: transparent; color: #6b7280; font-size: 13px; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background .14s ease, color .14s ease; }
+.fbtn:hover { background: #eef0f3; color: #1f2937; }
+.fbtn.active { background: #111827; color: #fff; font-weight: 600; }
 .qpills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .sig { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; display: inline-block; }
 .sig.pos { background: #dcfce7; color: #15803d; }
@@ -116,9 +111,8 @@ function renderFilterBar() {
   let html = '<button class="fbtn' + (SELECTED === "all" ? " active" : "") +
     '" onclick="selectFilter(\'all\')">All campaigns</button>';
   html += camps.map(function (c) {
-    const dot = '<span class="dot ' + (c.live ? "live" : "draft") + '"></span>';
     return '<button class="fbtn' + (SELECTED === c.id ? " active" : "") +
-      '" onclick="selectFilter(\'' + c.id + '\')">' + dot + c.name + '</button>';
+      '" onclick="selectFilter(\'' + c.id + '\')">' + c.name + '</button>';
   }).join("");
   document.getElementById("filterbar").innerHTML = html;
 }
