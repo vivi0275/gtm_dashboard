@@ -4,5 +4,6 @@
   "private": true,
   "description": "Live outbound dashboard: static page + serverless lemlist proxy (key stays server-side).",
   "scripts": { "dev": "node dev-server.js" },
+  "dependencies": { "@anthropic-ai/sdk": "^0.71.0" },
   "engines": { "node": ">=18" }
 }

@@ -54,4 +54,7 @@ server.listen(PORT, function () {
   if (!process.env.LEMLIST_API_KEY) {
     console.log("⚠️  LEMLIST_API_KEY introuvable — vérifie ton fichier .env.local");
   }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.log("⚠️  ANTHROPIC_API_KEY introuvable — sentiment non classé (fallback CURATED)");
+  }
 });

@@ -3,15 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tandem — Outbound Dashboard</title>
+<title>Tandem Outbound Dashboard</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
 <style>
-:root { color-scheme: light; }
+:root { color-scheme: light; --tandem-green: #32f191; --tandem-dark: #0d2320; }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f7f8fa; color: #1a1d24; font-size: 14px; line-height: 1.5; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 70px; }
-h1 { font-size: 20px; margin: 0 0 2px; }
-.sub { color: #6b7280; font-size: 13px; }
-.meta { color: #9ca3af; font-size: 12px; margin: 4px 0 18px; }
+.hdr { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo { width: 38px; height: 38px; border-radius: 10px; display: block; flex: none; }
+h1 { font-size: 20px; margin: 0; letter-spacing: -.015em; }
+.hdr-right { display: flex; align-items: center; gap: 14px; }
+.freshness { color: #9ca3af; font-size: 12px; white-space: nowrap; }
+.freshness.warn { color: #b45309; font-weight: 600; }
 .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; margin: 30px 0 12px; }
 .section-title span { text-transform: none; letter-spacing: 0; font-weight: 500; color: #b6bcc6; margin-left: 8px; }
 .hr { height: 1px; background: #e6e8ec; border: 0; margin: 34px 0 0; }
@@ -49,8 +54,8 @@ td.step { font-weight: 600; }
 .exkpi .v { font-size: 18px; font-weight: 700; }
 .exkpi .l { font-size: 11px; color: #6b7280; }
 .exempty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
-.rebtn { float: right; font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; }
-.filterbar { margin: 20px 0 32px; }
+.rebtn { font-size: 12px; color: #4f46e5; cursor: pointer; text-decoration: none; white-space: nowrap; }
+#filterbar { margin: 28px 0 32px; }
 .fsel-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; font-weight: 600; margin-bottom: 8px; }
 .fsel { font-size: 14px; font-weight: 600; color: #111827; background-color: #fff; border: 1px solid #d7dae0; border-radius: 10px; padding: 11px 42px 11px 16px; cursor: pointer; min-width: 300px; max-width: 100%; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 15px center; transition: border-color .14s ease, box-shadow .14s ease; }
 .fsel:hover { border-color: #a5abb6; }
@@ -69,10 +74,16 @@ td.center, th.center { text-align: center; }
 </head>
 <body>
 <div class="wrap">
-  <a class="rebtn" href="#" onclick="location.reload();return false;">↻ Refresh</a>
-  <h1>🏹 Tandem — Outbound Dashboard</h1>
-  <div class="sub">LinkedIn outbound · Campaign GTM + this quarter's experiments · live from lemlist</div>
-  <div class="meta" id="meta">Loading…</div>
+  <header class="hdr">
+    <div class="brand">
+      <img class="logo" src="data:image/png;base64,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" alt="Tandem" width="38" height="38">
+      <h1>Outbound Dashboard</h1>
+    </div>
+    <div class="hdr-right">
+      <span class="freshness" id="meta"></span>
+      <a class="rebtn" href="#" onclick="refresh();return false;">↻ Refresh</a>
+    </div>
+  </header>
   <div id="filterbar"></div>
   <div id="root"><div class="loading">Fetching campaign data…</div></div>
 </div>
@@ -82,29 +93,90 @@ function fmtPct(n, d) { return d > 0 ? pct(n, d).toFixed(1) + "%" : "—"; }
 
 var DATA = null;       // the full payload from /api/stats
 var SELECTED = "all";  // "all" or a campaign id
+var LAST_CHECK = null; // when we last successfully hit /api/stats
+var STALE = null;      // error text if the most recent poll failed
 
+// Poll every 5 min. The serverless response is CDN-cached for ~15 min, so most
+// polls are served by the CDN and lemlist still only sees ~4 origin hits/hour.
+var REFRESH_MS = 5 * 60 * 1000;
+
+// cache: no-store bypasses the *browser* cache without changing the URL, so the
+// CDN still serves its cached copy (a ?t= cache-buster would hit lemlist every time).
+async function fetchStats() {
+  const r = await fetch("/api/stats", { cache: "no-store" });
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// Initial load: pick the default campaign, then render.
 async function load() {
   let data;
   try {
-    const r = await fetch("/api/stats");
-    data = await r.json();
-    if (data.error) throw new Error(data.error);
+    data = await fetchStats();
   } catch (e) {
     document.getElementById("root").innerHTML = '<div class="err">Could not load data: ' + (e.message || e) + '</div>';
     document.getElementById("meta").textContent = "";
     return;
   }
   DATA = data;
+  LAST_CHECK = new Date();
+  STALE = null;
   const camps = data.campaigns || [];
   const main = camps.find(function (c) { return c.role === "main"; });
   SELECTED = main ? main.id : "all";  // land on the main campaign by default
 
-  const when = data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "";
-  document.getElementById("meta").textContent = "Live from lemlist · last refreshed " + when + " · cached ~15 min";
-
+  renderMeta();
   renderFilterBar();
   renderContent();
 }
+
+// Background poll: keeps the selected campaign and only re-renders when the
+// server actually produced newer data, so it never flickers under you.
+async function refresh() {
+  let data;
+  try {
+    data = await fetchStats();
+  } catch (e) {
+    STALE = String(e.message || e);
+    renderMeta();
+    return;
+  }
+  LAST_CHECK = new Date();
+  STALE = null;
+  const changed = !DATA || data.generatedAt !== DATA.generatedAt;
+  DATA = data;
+  renderMeta();
+  if (changed) {
+    renderFilterBar();  // campaign list may have changed server-side
+    renderContent();
+  }
+}
+window.refresh = refresh;
+
+// Compact freshness indicator in the header; full detail lives in the tooltip.
+function renderMeta() {
+  const el = document.getElementById("meta");
+  if (!DATA) { el.textContent = ""; return; }
+  const when = DATA.generatedAt ? new Date(DATA.generatedAt) : null;
+  const checked = LAST_CHECK ? LAST_CHECK.toLocaleTimeString() : "";
+  el.className = "freshness" + (STALE ? " warn" : "");
+  el.textContent = STALE ? "⚠️ refresh failed" : (when ? "Updated " + when.toLocaleTimeString() : "");
+  el.title = "Live from lemlist · data as of " + (when ? when.toLocaleString() : "—") +
+    " · cached ~15 min · auto-refresh every 5 min" +
+    (checked ? " · last checked " + checked : "") +
+    (STALE ? "\nLast refresh failed: " + STALE : "");
+}
+
+// Don't poll a hidden tab; catch up as soon as it comes back to the front.
+setInterval(function () {
+  if (document.visibilityState === "visible") refresh();
+}, REFRESH_MS);
+
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState !== "visible") return;
+  if (!LAST_CHECK || Date.now() - LAST_CHECK.getTime() >= REFRESH_MS) refresh();
+});
 
 // --- Filter bar --------------------------------------------------------------
 function renderFilterBar() {
@@ -192,9 +264,12 @@ function replyQualityHtml(c) {
       '</td><td><span class="sig ' + toneClass(r.tone) + '">' + r.signal + '</span></td></tr>';
   }).join("");
   const note = rq.note ? '<div class="note">' + rq.note + '</div>' : "";
-  return '<div class="section-title">Reply quality' + (rq.asOf ? ' <span>' + rq.asOf + '</span>' : '') + '</div>' +
+  const sent = (DATA && DATA.sentiment) || {};
+  const warn = sent.error ? '<div class="note">⚠️ Auto-classification unavailable (' + sent.error + ') — showing the hand-written read.</div>' : "";
+  const label = rq.auto ? "auto-classified · " : "";
+  return '<div class="section-title">Reply quality' + (rq.asOf ? ' <span>' + label + rq.asOf + '</span>' : '') + '</div>' +
     '<div class="card">' + pills + '<table><thead><tr><th>Who replied</th><th>Title</th><th>Read</th><th>Signal</th></tr></thead><tbody>' +
-    body + '</tbody></table>' + note + '</div>';
+    body + '</tbody></table>' + note + warn + '</div>';
 }
 
 function perStepHtml(c) {
@@ -237,8 +312,7 @@ function campaignDetail(c) {
 
   if (!c.live) {
     return '<div class="section-title">' + kind + ' <span>' + c.name + '</span></div>' +
-      '<div class="card exempty">Not launched yet — no data for “' + c.name + '”.' +
-      (c.signal ? ' <br><span style="color:#b6bcc6">' + c.signal + '</span>' : '') + '</div>';
+      '<div class="card exempty">Not launched yet — no data for “' + c.name + '”.</div>';
   }
 
   const stars = '<div class="stars">' +
@@ -248,8 +322,7 @@ function campaignDetail(c) {
     star(c.contacted, "Contacted", "", "") +
     '</div>';
 
-  return '<div class="section-title">' + kind + ' <span>' + c.name + '</span> ' + badge + '</div>' +
-    (c.signal ? '<div class="meta">' + c.signal + '</div>' : '') + stars +
+  return '<div class="section-title">' + kind + ' <span>' + c.name + '</span> ' + badge + '</div>' + stars +
     '<div class="section-title">Funnel</div>' + funnelHtml(c) +
     replyQualityHtml(c) +
     perStepHtml(c) +
@@ -265,13 +338,18 @@ function allView(camps) {
     agg.replied += c.replied; agg.booked += c.booked;
   });
 
-  // Combine every campaign's curated reply-quality rows.
+  // Combine every campaign's reply-quality rows.
   const rqRows = [];
+  let rqAuto = false, rqAsOf = "";
   camps.forEach(function (c) {
-    if (c.curated && c.curated.replyQuality && c.curated.replyQuality.rows) {
-      rqRows.push.apply(rqRows, c.curated.replyQuality.rows);
-    }
+    const rq = c.curated && c.curated.replyQuality;
+    if (!rq || !rq.rows) return;
+    rqRows.push.apply(rqRows, rq.rows);
+    if (rq.auto) rqAuto = true;
+    if (rq.asOf && rq.asOf > rqAsOf) rqAsOf = rq.asOf;
   });
+  const toneRank = { positive: 0, warm: 1, cold: 2 };
+  rqRows.sort(function (x, y) { return toneRank[x.tone] - toneRank[y.tone]; });
 
   // Merge response-by-job-title across campaigns, summing by row name.
   function mergeRows(getter) {
@@ -291,7 +369,7 @@ function allView(camps) {
 
   // Synthetic campaign object so the section renderers can be reused.
   agg.curated = {
-    replyQuality: rqRows.length ? { rows: rqRows } : null,
+    replyQuality: rqRows.length ? { rows: rqRows, auto: rqAuto, asOf: rqAsOf } : null,
     byJobTitle: (roles.length || seniority.length) ? { roles: roles, seniority: seniority, batchNote: "all campaigns combined" } : null
   };
 
