@@ -20,19 +20,25 @@ h1 { font-size: 20px; margin: 0; letter-spacing: -.015em; }
 .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; margin: 30px 0 12px; }
 .section-title span { text-transform: none; letter-spacing: 0; font-weight: 500; color: #b6bcc6; margin-left: 8px; }
 .hr { height: 1px; background: #e6e8ec; border: 0; margin: 34px 0 0; }
-.card { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 18px; }
+/* overflow-x: a wide table scrolls inside its card instead of widening the page. */
+.card { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 18px; overflow-x: auto; }
 .stars { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .star { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 16px; }
 .star.hero { background: linear-gradient(135deg,#111827,#1f2937); border: none; color: #fff; }
 .star .v { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
 .star .l { font-size: 12px; margin-top: 2px; opacity: .85; }
-.star .d { font-size: 12px; margin-top: 5px; font-weight: 600; color: #6b7280; }
+.star .d { font-size: 15px; margin-top: 6px; font-weight: 700; color: #4b5563; }
+.star .s { font-size: 11px; margin-top: 3px; color: #9ca3af; }
+.star.hero .d { color: rgba(255,255,255,.85); }
+.star.hero .s { color: rgba(255,255,255,.6); }
 .funnel { display: flex; flex-direction: column; gap: 8px; }
-.frow { display: grid; grid-template-columns: 175px 1fr; gap: 14px; align-items: center; }
+.frow { display: grid; grid-template-columns: 222px 1fr; gap: 14px; align-items: center; }
 .flabel .fname { font-weight: 600; font-size: 13px; }
-.flabel .fconv { color: #9ca3af; font-size: 11px; }
-.fbarwrap { background: #eef0f3; border-radius: 8px; height: 32px; overflow: hidden; }
-.fbar { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.flabel .fconv { color: #9ca3af; font-size: 11px; white-space: nowrap; }
+.fbarwrap { display: flex; align-items: center; background: #eef0f3; border-radius: 8px; height: 32px; }
+.fbar { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; }
+/* Value printed next to the bar when the bar itself is too narrow to hold it. */
+.fval { margin-left: 8px; font-weight: 700; font-size: 13px; color: #374151; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
 th:first-child, td:first-child { text-align: left; }
@@ -43,6 +49,7 @@ td.step { font-weight: 600; }
 .pill.live { background: #dcfce7; color: #15803d; }
 .pill.draft { background: #f3f4f6; color: #6b7280; }
 .note { font-size: 12px; color: #9ca3af; margin-top: 10px; }
+.cmeta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #6b7280; margin: -6px 0 14px; }
 .err { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 14px; border-radius: 10px; }
 .loading { color: #9ca3af; padding: 40px; text-align: center; }
 .exgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 12px; }
@@ -65,8 +72,9 @@ td.step { font-weight: 600; }
 .sig.pos { background: #dcfce7; color: #15803d; }
 .sig.warm { background: #fef3c7; color: #b45309; }
 .sig.cold { background: #fee2e2; color: #b91c1c; }
+.sig.neu { background: #f3f4f6; color: #6b7280; }
 .tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; background: #dcfce7; color: #15803d; margin-left: 8px; vertical-align: middle; text-transform: none; letter-spacing: 0; }
-.steptype { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 6px; background: #eef2ff; color: #4f46e5; }
+.tag.im { background: #e0f2fe; color: #0369a1; margin-left: 6px; }
 tr.muted td { color: #b6bcc6; }
 td.center, th.center { text-align: center; }
 .subhead td { padding-top: 20px; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #eef0f3; }
@@ -122,9 +130,7 @@ async function load() {
   DATA = data;
   LAST_CHECK = new Date();
   STALE = null;
-  const camps = data.campaigns || [];
-  const main = camps.find(function (c) { return c.role === "main"; });
-  SELECTED = main ? main.id : "all";  // land on the main campaign by default
+  SELECTED = "all";  // land on the combined view, not a single campaign
 
   renderMeta();
   renderFilterBar();
@@ -210,86 +216,124 @@ function renderContent() {
   }
 }
 
-function star(v, l, cls, d) {
-  return '<div class="star ' + (cls || "") + '"><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (d ? '<div class="d">' + d + '</div>' : '') + '</div>';
+// `sub` is the small print under the headline number (e.g. the invite / InMail split).
+function star(v, l, cls, d, sub) {
+  return '<div class="star ' + (cls || "") + '"><div class="v">' + v + '</div><div class="l">' + l + '</div>' +
+    (d ? '<div class="d">' + d + '</div>' : '') + (sub ? '<div class="s">' + sub + '</div>' : '') + '</div>';
 }
 
-function toneClass(t) { return t === "positive" ? "pos" : (t === "warm" ? "warm" : "cold"); }
+// "101 via invite · 4 via InMail" — only when the InMail count is known.
+function acceptedSplit(c) {
+  if (c.acceptedInmail == null) return "";
+  return (c.acceptedInvite != null ? c.acceptedInvite : c.accepted) + " via invite · " +
+    c.acceptedInmail + " via InMail";
+}
+
+function toneClass(t) {
+  if (t === "positive") return "pos";
+  if (t === "warm") return "warm";
+  return t === "unknown" ? "neu" : "cold";  // "unknown" = shown without a classification
+}
+
+// Date-only strings are parsed as *local* midnight on purpose: new Date("2026-07-11")
+// is UTC midnight and renders as Jul 10 in any timezone west of UTC.
+function fmtDate(iso) {
+  if (!iso) return "";
+  const p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const d = p ? new Date(+p[1], +p[2] - 1, +p[3]) : new Date(iso);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+// "View in lemlist ↗" — goes to the campaign in the lemlist app (Performance).
+function lemlistLink(c, label) {
+  if (!c.url) return "";
+  return '<a class="rebtn" href="' + c.url + '" target="_blank" rel="noopener">' + (label || "View in lemlist ↗") + '</a>';
+}
+
+// Replier's name, linked to their LinkedIn profile when lemlist gave us the URL.
+// InMail repliers (the sequence's manual-task step) get a small channel tag, and
+// anyone who booked a demo gets one too — a replier can carry both.
+function whoHtml(r) {
+  const name = r.linkedinUrl
+    ? '<a href="' + r.linkedinUrl + '" target="_blank" rel="noopener">' + r.name + '</a>'
+    : r.name;
+  const channel = r.via === "inmail" ? ' <span class="tag im">InMail</span>' : '';
+  const booked = (r.booked || r.via === "demo") ? ' <span class="tag">Demo booked</span>' : '';
+  return name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
+    channel + booked;
+}
 
 // Funnel bars for a campaign; inserts a "Positive reply" stage when curated.
 function funnelHtml(c) {
   const cur = c.curated;
   const positive = (cur && cur.replyQuality) ? cur.replyQuality.rows.filter(function (r) { return r.tone === "positive"; }).length : null;
-  const stages = [
-    { name: "Contacted (invited)", v: c.contacted, color: "#4338ca" },
-    { name: "Invite accepted", v: c.accepted, color: "#7c3aed", prev: c.contacted },
-    { name: "Replied", v: c.replied, color: "#ea580c", prev: c.accepted }
-  ];
+  // InMails sent (the sequence's "Manual task" step) are NOT a funnel stage: their
+  // recipients already sit inside "Contacted", so the bar read as an extra top of
+  // funnel and made the chart harder to follow. The count stays on the Contacted
+  // stat card instead.
+  const stages = [{ name: "Contacted (invited)", v: c.contacted, color: "#4338ca" }];
+  stages.push({ name: "Invite accepted", v: c.accepted, color: "#7c3aed", prev: c.contacted, split: acceptedSplit(c) });
+  stages.push({ name: "Replied", v: c.replied, color: "#ea580c", prev: c.accepted });
   if (positive != null) stages.push({ name: "Positive reply", v: positive, color: "#d97706", prev: c.replied });
   stages.push({ name: "Meeting booked", v: c.booked, color: "#16a34a", prev: positive != null ? positive : c.replied });
 
   const maxV = c.contacted || 1;
   return '<div class="card"><div class="funnel">' + stages.map(function (s) {
-    const w = Math.max((s.v / maxV) * 100, s.v > 0 ? 6 : 1.5);
+    // Square-root scale: a linear one puts 5 and 6 out of ~350 within a pixel of
+    // each other (both hit the old 6% floor), so different counts looked identical.
+    // Sqrt keeps the ordering while giving the small stages visibly distinct bars;
+    // the exact counts and % of contacted are printed either way.
+    const w = s.v > 0 ? Math.max(Math.sqrt(s.v / maxV) * 100, 4) : 1.5;
     const conv = s.prev != null ? " · " + fmtPct(s.v, s.prev) + " from prev" : "";
+    // A short bar can't hold its own number — print it just after the bar instead.
+    const inside = w >= 8 ? s.v : "";
+    const outside = w >= 8 ? "" : '<span class="fval">' + s.v + '</span>';
     return '<div class="frow"><div class="flabel"><div class="fname">' + s.name + '</div><div class="fconv">' +
-      fmtPct(s.v, c.contacted) + " of contacted" + conv + '</div></div><div class="fbarwrap"><div class="fbar" style="width:' +
-      w + '%;background:' + s.color + '">' + s.v + '</div></div></div>';
+      fmtPct(s.v, c.contacted) + " of contacted" + conv + '</div>' +
+      (s.split ? '<div class="fconv">' + s.split + '</div>' : '') +
+      '</div><div class="fbarwrap"><div class="fbar" style="width:' +
+      w + '%;background:' + s.color + '">' + inside + '</div>' + outside + '</div></div>';
   }).join("") + '</div></div>';
 }
 
-// Curated reply-quality table (sentiment). Falls back to live replies list.
+// Reply-quality table (sentiment). Every campaign gets this section: when no
+// classification is available it lists the same repliers without a signal.
 function replyQualityHtml(c) {
   const cur = c.curated;
   if (!cur || !cur.replyQuality) {
-    // No curated analysis — show the live repliers list.
-    if (!c.replies || !c.replies.length) return '<div class="section-title">Recent replies</div><div class="card exempty">No replies yet.</div>';
+    if (!c.replies || !c.replies.length) return '<div class="section-title">Reply quality</div><div class="card exempty">No replies yet.</div>';
     const body = c.replies.map(function (r) {
-      const d = r.date ? new Date(r.date).toLocaleDateString() : "";
-      return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
-        '</td><td class="msg">' + (r.preview || "") + '</td><td>' + d + '</td></tr>';
+      return '<tr><td class="step">' + whoHtml(r) +
+        '</td><td>' + (r.title || "") + '</td><td class="msg">' + (r.preview || "") +
+        '</td><td><span class="sig neu">Unclassified</span></td></tr>';
     }).join("");
-    return '<div class="section-title">Recent replies</div><div class="card"><table><thead><tr><th>Who replied</th><th>What they said</th><th>When</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+    return '<div class="section-title">Reply quality</div>' +
+      '<div class="card"><table><thead><tr><th>Who replied</th><th>Title</th><th>What they said</th><th>Signal</th></tr></thead><tbody>' +
+      body + '</tbody></table></div>';
   }
   const rq = cur.replyQuality;
   const pos = rq.rows.filter(function (r) { return r.tone === "positive"; }).length;
   const warm = rq.rows.filter(function (r) { return r.tone === "warm"; }).length;
   const cold = rq.rows.filter(function (r) { return r.tone === "cold"; }).length;
   const pills = '<div class="qpills"><span class="sig pos">' + pos + ' positive</span>' +
-    '<span class="sig warm">' + warm + ' engaged / lukewarm</span>' +
+    '<span class="sig warm">' + warm + ' engaged / skeptical</span>' +
     '<span class="sig cold">' + cold + ' not a fit</span></div>';
   const body = rq.rows.map(function (r) {
-    return '<tr><td class="step">' + r.name + (r.company ? ' <span style="color:#9ca3af;font-weight:400">· ' + r.company + '</span>' : '') +
+    return '<tr><td class="step">' + whoHtml(r) +
       '</td><td>' + (r.title || "") + '</td><td class="msg">' + (r.read || "") +
       '</td><td><span class="sig ' + toneClass(r.tone) + '">' + r.signal + '</span></td></tr>';
   }).join("");
   const note = rq.note ? '<div class="note">' + rq.note + '</div>' : "";
-  const sent = (DATA && DATA.sentiment) || {};
-  const warn = sent.error ? '<div class="note">⚠️ Auto-classification unavailable (' + sent.error + ') — showing the hand-written read.</div>' : "";
   const label = rq.auto ? "auto-classified · " : "";
   return '<div class="section-title">Reply quality' + (rq.asOf ? ' <span>' + label + rq.asOf + '</span>' : '') + '</div>' +
     '<div class="card">' + pills + '<table><thead><tr><th>Who replied</th><th>Title</th><th>Read</th><th>Signal</th></tr></thead><tbody>' +
-    body + '</tbody></table>' + note + warn + '</div>';
-}
-
-function perStepHtml(c) {
-  const cur = c.curated;
-  if (!cur || !cur.perStep || !cur.perStep.length) return "";
-  const body = cur.perStep.map(function (s) {
-    const muted = s.sent === 0;
-    return '<tr' + (muted ? ' class="muted"' : '') + '><td class="step">' + s.step +
-      '</td><td class="center"><span class="steptype">' + s.type + '</span></td><td>' + s.sent +
-      '</td><td>' + s.replied + '</td><td>' + (s.sent > 0 ? fmtPct(s.replied, s.sent) : "—") + '</td></tr>';
-  }).join("");
-  return '<div class="section-title">Per-step message performance</div>' +
-    '<div class="card"><table><thead><tr><th>Step</th><th class="center">Type</th><th>Sent</th><th>Replied</th><th>Reply %</th></tr></thead><tbody>' +
-    body + '</tbody></table></div>';
+    body + '</tbody></table>' + note + '</div>';
 }
 
 function byJobTitleHtml(c) {
-  const cur = c.curated;
-  if (!cur || !cur.byJobTitle) return "";
-  const b = cur.byJobTitle;
+  if (!c.byJobTitle) return "";
+  const b = c.byJobTitle;
   function row(x) {
     const tag = x.tag ? ' <span class="tag">' + x.tag + '</span>' : '';
     return '<tr><td class="step">' + x.name + tag + '</td><td>' + x.contacted +
@@ -299,55 +343,74 @@ function byJobTitleHtml(c) {
   const roles = (b.roles || []).map(row).join("");
   const sen = (b.seniority || []).map(row).join("");
   const senBlock = sen ? '<tr class="subhead"><td>Seniority</td><td></td><td></td><td></td></tr>' + sen : "";
-  const footer = b.footer ? '<div class="note">' + b.footer + '</div>' : "";
   return '<div class="section-title">Response by job title' + (b.batchNote ? ' <span>' + b.batchNote + '</span>' : '') + '</div>' +
     '<div class="card"><table><thead><tr><th>Role family</th><th>Contacted</th><th>Accepted</th><th>Replied</th></tr></thead><tbody>' +
-    roles + senBlock + '</tbody></table>' + footer + '</div>';
+    roles + senBlock + '</tbody></table></div>';
 }
 
 // Full detail view for a single campaign / experiment.
 function campaignDetail(c) {
   const badge = c.live ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
   const kind = c.role === "main" ? "Main campaign" : "Experiment";
+  const launched = c.launchedAt ? fmtDate(c.launchedAt) : "";
+  const meta = '<div class="cmeta">' +
+    (launched ? '<span>' + (c.live ? "Launched " : "Launches ") + launched + '</span>' : '') +
+    lemlistLink(c) + '</div>';
 
   if (!c.live) {
-    return '<div class="section-title">' + kind + ' <span>' + c.name + '</span></div>' +
+    return '<div class="section-title">' + kind + ' <span>' + c.name + '</span></div>' + meta +
       '<div class="card exempty">Not launched yet — no data for “' + c.name + '”.</div>';
   }
 
   const stars = '<div class="stars">' +
-    star(c.booked, "Meetings booked", "hero", "") +
-    star(c.accepted, "Invites accepted", "", fmtPct(c.accepted, c.contacted) + " accept rate") +
+    star(c.contacted, "Contacted", "", c.leadsLoaded ? "of " + c.leadsLoaded + " leads loaded" : "",
+      c.inmailSent != null ? c.inmailSent + " InMails sent (manual task)" : "") +
+    star(c.accepted, "Invites accepted", "", fmtPct(c.accepted, c.contacted) + " accept rate", acceptedSplit(c)) +
     star(c.replied, "Replies", "", fmtPct(c.replied, c.accepted) + " of accepted") +
-    star(c.contacted, "Contacted", "", "") +
+    star(c.booked, "Meetings booked", "hero", fmtPct(c.booked, c.contacted) + " of contacted") +
     '</div>';
 
-  return '<div class="section-title">' + kind + ' <span>' + c.name + '</span> ' + badge + '</div>' + stars +
+  return '<div class="section-title">' + kind + ' <span>' + c.name + '</span> ' + badge + '</div>' + meta + stars +
     '<div class="section-title">Funnel</div>' + funnelHtml(c) +
     replyQualityHtml(c) +
-    perStepHtml(c) +
     byJobTitleHtml(c);
 }
 
 // Aggregated view: every campaign's stats combined into one funnel,
 // one reply-quality table, and one response-by-job-title breakdown.
 function allView(camps) {
-  const agg = { name: "All campaigns", contacted: 0, accepted: 0, replied: 0, booked: 0 };
+  const agg = { name: "All campaigns", contacted: 0, accepted: 0, replied: 0, booked: 0, acceptedInvite: 0 };
+  // InMail counts stay null until at least one campaign reports them, so the
+  // split and the InMail stage only show up once there is a real number.
+  let imSent = null, imAccepted = null;
   camps.forEach(function (c) {
     agg.contacted += c.contacted; agg.accepted += c.accepted;
     agg.replied += c.replied; agg.booked += c.booked;
+    agg.acceptedInvite += (c.acceptedInvite != null ? c.acceptedInvite : c.accepted);
+    if (c.inmailSent != null) imSent = (imSent || 0) + c.inmailSent;
+    if (c.acceptedInmail != null) imAccepted = (imAccepted || 0) + c.acceptedInmail;
   });
+  agg.inmailSent = imSent;
+  agg.acceptedInmail = imAccepted;
 
-  // Combine every campaign's reply-quality rows.
-  const rqRows = [];
+  // Combine every campaign's reply-quality rows. One person can show up in two
+  // campaigns (an InMail reply in one, a booked demo in the other), so keep a
+  // single row per name — the booked one wins, it is the later signal.
   let rqAuto = false, rqAsOf = "";
+  const byName = new Map();
   camps.forEach(function (c) {
     const rq = c.curated && c.curated.replyQuality;
     if (!rq || !rq.rows) return;
-    rqRows.push.apply(rqRows, rq.rows);
+    rq.rows.forEach(function (r) {
+      const key = (r.name || "").toLowerCase();
+      const prev = byName.get(key);
+      const booked = function (x) { return !!(x.booked || x.via === "demo"); };
+      if (!prev || (booked(r) && !booked(prev))) byName.set(key, r);
+    });
     if (rq.auto) rqAuto = true;
     if (rq.asOf && rq.asOf > rqAsOf) rqAsOf = rq.asOf;
   });
+  const rqRows = Array.from(byName.values());
   const toneRank = { positive: 0, warm: 1, cold: 2 };
   rqRows.sort(function (x, y) { return toneRank[x.tone] - toneRank[y.tone]; });
 
@@ -355,7 +418,7 @@ function allView(camps) {
   function mergeRows(getter) {
     const map = {}, order = [];
     camps.forEach(function (c) {
-      const arr = (c.curated && c.curated.byJobTitle) ? (getter(c.curated.byJobTitle) || []) : [];
+      const arr = c.byJobTitle ? (getter(c.byJobTitle) || []) : [];
       arr.forEach(function (x) {
         if (!map[x.name]) { map[x.name] = { name: x.name, contacted: 0, accepted: 0, replied: 0, tag: x.tag }; order.push(x.name); }
         map[x.name].contacted += x.contacted; map[x.name].accepted += x.accepted; map[x.name].replied += x.replied;
@@ -364,26 +427,44 @@ function allView(camps) {
     });
     return order.map(function (n) { return map[n]; });
   }
-  const roles = mergeRows(function (b) { return b.roles; });
+  const roles = mergeRows(function (b) { return b.roles; }).sort(function (x, y) { return y.contacted - x.contacted; });
   const seniority = mergeRows(function (b) { return b.seniority; });
 
   // Synthetic campaign object so the section renderers can be reused.
   agg.curated = {
-    replyQuality: rqRows.length ? { rows: rqRows, auto: rqAuto, asOf: rqAsOf } : null,
-    byJobTitle: (roles.length || seniority.length) ? { roles: roles, seniority: seniority, batchNote: "all campaigns combined" } : null
+    replyQuality: rqRows.length ? { rows: rqRows, auto: rqAuto, asOf: rqAsOf } : null
   };
+  agg.byJobTitle = (roles.length || seniority.length)
+    ? { roles: roles, seniority: seniority, batchNote: "all campaigns combined" } : null;
 
   const stars = '<div class="stars">' +
-    star(agg.booked, "Meetings booked", "hero", "") +
-    star(agg.accepted, "Invites accepted", "", fmtPct(agg.accepted, agg.contacted) + " accept rate") +
+    star(agg.contacted, "Contacted", "", "",
+      agg.inmailSent != null ? agg.inmailSent + " InMails sent (manual task)" : "") +
+    star(agg.accepted, "Invites accepted", "", fmtPct(agg.accepted, agg.contacted) + " accept rate", acceptedSplit(agg)) +
     star(agg.replied, "Replies", "", fmtPct(agg.replied, agg.accepted) + " of accepted") +
-    star(agg.contacted, "Contacted", "", "") +
+    star(agg.booked, "Meetings booked", "hero", fmtPct(agg.booked, agg.contacted) + " of contacted") +
     '</div>';
 
   return '<div class="section-title">All campaigns <span>combined across every campaign</span></div>' + stars +
+    campaignsTableHtml(camps) +
     '<div class="section-title">Funnel <span>all campaigns combined</span></div>' + funnelHtml(agg) +
     replyQualityHtml(agg) +
     byJobTitleHtml(agg);
+}
+
+// One row per campaign: launch date, the funnel in numbers, and the lemlist link.
+function campaignsTableHtml(camps) {
+  if (!camps.length) return "";
+  const body = camps.map(function (c) {
+    const badge = c.live ? '' : ' <span class="pill draft">Draft</span>';
+    return '<tr' + (c.live ? '' : ' class="muted"') + '><td class="step">' + c.name + badge +
+      '</td><td>' + (c.launchedAt ? fmtDate(c.launchedAt) : "—") +
+      '</td><td>' + c.contacted + '</td><td>' + c.accepted + '</td><td>' + c.replied +
+      '</td><td>' + c.booked + '</td><td>' + lemlistLink(c, "lemlist ↗") + '</td></tr>';
+  }).join("");
+  return '<div class="section-title">Campaigns <span>launch date · funnel · lemlist</span></div>' +
+    '<div class="card"><table><thead><tr><th>Campaign</th><th>Launched</th><th>Contacted</th><th>Accepted</th>' +
+    '<th>Replied</th><th>Booked</th><th>Performance</th></tr></thead><tbody>' + body + '</tbody></table></div>';
 }
 
 load();
