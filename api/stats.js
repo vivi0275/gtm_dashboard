@@ -56,7 +56,7 @@ const MANUAL_BOOKINGS = {
     unnamed: 5,
     demos: [
       { name: "Alex Isaacs",    company: "Nitra",    email: "alex@nitra.com",            date: "2026-07-08", title: "Customer Success Engineer",   linkedinUrl: "https://www.linkedin.com/in/alex-isaacs/" },
-      { name: "Anthony Rivera", company: "",         email: "anrivera@gmail.com",        date: "2026-07-08", title: "",                            linkedinUrl: "" },
+      { name: "Anthony Rivera", company: "Plaid",    email: "anrivera@gmail.com",        date: "2026-07-08", title: "Implementation Specialist",   linkedinUrl: "https://www.linkedin.com/in/anthony-rivera1/" },
       { name: "Lydia Green",    company: "Vesta",    email: "lydiajanegreen7@gmail.com", date: "2026-07-15", title: "Head of Implementation",      linkedinUrl: "https://www.linkedin.com/in/lydiajanegreen/" },
       { name: "Sahil Hotwani",  company: "Synctera", email: "shhotwani@gmail.com",       date: "2026-07-15", title: "Implementation Manager",      linkedinUrl: "https://www.linkedin.com/in/sahilhotwani/" },
       { name: "Dano Wall",      company: "Lithic",   email: "",                          date: "",           title: "Implementations Lead",        linkedinUrl: "https://www.linkedin.com/in/dano-wall/" },
@@ -132,6 +132,14 @@ const CURATED = {
   "cam_NmKvkhsnFu7eiSLYr": { leadsLoaded: 18 },
   "cam_vrMNEtXmxAG2LX4GG": { leadsLoaded: 59 }
 };
+
+// People to keep out of Reply quality for now, matched on name (case-insensitive).
+// Only the table is affected: the funnel counts still include their reply.
+const HIDDEN_REPLIERS = new Set(["meghna shekhar"]);
+
+function isHidden(row) {
+  return HIDDEN_REPLIERS.has(String(row && row.name || "").trim().toLowerCase());
+}
 
 // ---------------------------------------------------------------------------
 // INMAIL — the "Manual task" step of a lemlist sequence is an InMail you send by
@@ -357,6 +365,7 @@ async function computeCampaign(meta) {
     if (seen.has(a.leadId)) return;
     seen.add(a.leadId);
     const name = [a.leadFirstName, a.leadLastName].filter(Boolean).join(" ") || "Unknown";
+    if (isHidden({ name: name })) return;
     const text = a.text || a.message || "";
     replies.push({
       name: name,
@@ -376,6 +385,7 @@ async function computeCampaign(meta) {
   const im = INMAIL[meta.id] || null;
   const imReplies = (im && im.replies) || [];
   imReplies.forEach(function (r) {
+    if (isHidden(r)) return;
     replies.push({
       name: r.name, company: r.company || "", title: r.title || "",
       linkedinUrl: r.linkedinUrl || "",
@@ -651,7 +661,7 @@ async function attachSentiment(campaigns) {
       // live replies so the names stay clickable. CURATED is never mutated.
       const urlByName = new Map();
       (c.replies || []).forEach(function (r) { if (r.linkedinUrl) urlByName.set(r.name, r.linkedinUrl); });
-      const curatedRows = c.curated.replyQuality.rows.map(function (row) {
+      const curatedRows = c.curated.replyQuality.rows.filter(function (row) { return !isHidden(row); }).map(function (row) {
         return Object.assign({ linkedinUrl: urlByName.get(row.name) || "", via: "linkedin" }, row,
           { read: noLukewarm(row.read), signal: noLukewarm(row.signal) });
       });
